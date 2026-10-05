@@ -30,11 +30,17 @@ data class Snack(
     val price: Long,
     val tagline: String = "",
     val tags: Set<String> = emptySet(),
+    /** HTTPS URL of a glTF/glb model shown in AR via Scene Viewer, or null if the snack has none. */
+    val arModelUrl: String? = null,
 )
 
 /**
  * Static data
  */
+
+// Scene Viewer only loads models over HTTPS, so the glb is served from the repo on GitHub.
+private const val DONUT_AR_MODEL_URL =
+    "https://raw.githubusercontent.com/Krost22/Jetsnack-ARFeatures/main/Jetsnack/ar/models/donut.glb"
 
 val snacks = listOf(
     Snack(
@@ -50,6 +56,7 @@ val snacks = listOf(
         tagline = "A tag line",
         imageRes = R.drawable.donut,
         price = 299,
+        arModelUrl = DONUT_AR_MODEL_URL,
     ),
     Snack(
         id = Random.nextLong(),

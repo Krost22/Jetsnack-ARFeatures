@@ -14,6 +14,8 @@
 <resources>
     <string name="app_name">Jetsnack</string>
     <string name="label_back">Back</string>
+    <string name="view_in_your_space">View in your space</string>
+    <string name="ar_unavailable">AR viewer is not available on this device</string>
 
     <!-- Home Tabs -->
     <string name="home_feed">Home</string>

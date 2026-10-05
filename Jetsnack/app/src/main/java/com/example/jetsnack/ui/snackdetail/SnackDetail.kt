@@ -19,7 +19,6 @@
 package com.example.jetsnack.ui.snackdetail
 
 import android.content.res.Configuration
-import androidx.annotation.DrawableRes
 import androidx.compose.animation.BoundsTransform
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -45,6 +44,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -81,7 +81,9 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -103,6 +105,7 @@ import com.example.jetsnack.ui.LocalNavAnimatedVisibilityScope
 import com.example.jetsnack.ui.LocalSharedTransitionScope
 import com.example.jetsnack.ui.SnackSharedElementKey
 import com.example.jetsnack.ui.SnackSharedElementType
+import com.example.jetsnack.ui.ar.launchSceneViewer
 import com.example.jetsnack.ui.components.JetsnackButton
 import com.example.jetsnack.ui.components.JetsnackDivider
 import com.example.jetsnack.ui.components.JetsnackPreviewWrapper
@@ -183,7 +186,7 @@ fun SnackDetail(snackId: Long, origin: String, upPress: () -> Unit) {
             Header(snack.id, origin = origin)
             Body(related, scroll)
             Title(snack, origin) { scroll.value }
-            Image(snackId, origin, snack.imageRes) { scroll.value }
+            Image(snack, origin) { scroll.value }
             Up(upPress)
             CartBottomBar(modifier = Modifier.align(Alignment.BottomCenter))
         }
@@ -469,10 +472,8 @@ private fun Title(snack: Snack, origin: String, scrollProvider: () -> Int) {
 
 @Composable
 private fun Image(
-    snackId: Long,
+    snack: Snack,
     origin: String,
-    @DrawableRes
-    imageRes: Int,
     scrollProvider: () -> Int,
 ) {
     val collapseRange = with(LocalDensity.current) { (MaxTitleOffset - MinTitleOffset).toPx() }
@@ -489,26 +490,77 @@ private fun Image(
         val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
             ?: throw IllegalStateException("No animatedVisibilityScope found")
 
-        with(sharedTransitionScope) {
-            SnackImage(
-                imageRes = imageRes,
-                contentDescription = null,
-                modifier = Modifier
-                    .sharedBounds(
-                        rememberSharedContentState(
-                            key = SnackSharedElementKey(
-                                snackId = snackId,
-                                origin = origin,
-                                type = SnackSharedElementType.Image,
+        Box {
+            with(sharedTransitionScope) {
+                SnackImage(
+                    imageRes = snack.imageRes,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .sharedBounds(
+                            rememberSharedContentState(
+                                key = SnackSharedElementKey(
+                                    snackId = snack.id,
+                                    origin = origin,
+                                    type = SnackSharedElementType.Image,
+                                ),
                             ),
-                        ),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        exit = fadeOut(),
-                        enter = fadeIn(),
-                        boundsTransform = snackDetailBoundsTransform,
-                    )
-                    .fillMaxSize(),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            exit = fadeOut(),
+                            enter = fadeIn(),
+                            boundsTransform = snackDetailBoundsTransform,
+                        )
+                        .fillMaxSize(),
 
+                )
+            }
+            snack.arModelUrl?.let { modelUrl ->
+                ViewInArButton(
+                    snackName = snack.name,
+                    modelUrl = modelUrl,
+                    collapseFractionProvider = collapseFractionProvider,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ViewInArButton(
+    snackName: String,
+    modelUrl: String,
+    collapseFractionProvider: () -> Float,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
+        ?: throw IllegalStateException("No animatedVisibilityScope found")
+    // Fade out quickly as the image starts collapsing so it never sits on the small thumbnail.
+    val visibleFractionProvider = { (1f - collapseFractionProvider() * 4f).coerceIn(0f, 1f) }
+    with(animatedVisibilityScope) {
+        JetsnackButton(
+            onClick = {
+                if (visibleFractionProvider() > 0f) launchSceneViewer(context, modelUrl, snackName)
+            },
+            shape = CircleShape,
+            contentPadding = PaddingValues(start = 12.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
+            modifier = modifier
+                .animateEnterExit(
+                    enter = fadeIn(tween(300, delayMillis = 300)) + scaleIn(tween(300, delayMillis = 300)),
+                    exit = fadeOut(tween(50)),
+                )
+                .graphicsLayer { alpha = visibleFractionProvider() },
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_view_in_ar),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.view_in_your_space),
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
             )
         }
     }
