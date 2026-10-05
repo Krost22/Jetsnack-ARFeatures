@@ -54,9 +54,21 @@ import com.example.jetsnack.ui.theme.JetsnackTheme
 @Composable
 fun Feed(onSnackClick: (Long, String) -> Unit, modifier: Modifier = Modifier) {
     val snackCollections = remember { SnackRepo.getSnacks() }
-    val filters = remember { SnackRepo.getFilters() }
+    val arFilter = remember { SnackRepo.getArFilter() }
+    val filters = remember { listOf(arFilter) + SnackRepo.getFilters() }
+    val arOnly by arFilter.enabled
+    val visibleCollections = remember(arOnly) {
+        if (arOnly) {
+            snackCollections.mapNotNull { collection ->
+                collection.copy(snacks = collection.snacks.filter { it.arModel != null })
+                    .takeIf { it.snacks.isNotEmpty() }
+            }
+        } else {
+            snackCollections
+        }
+    }
     Feed(
-        snackCollections,
+        visibleCollections,
         filters,
         onSnackClick,
         modifier,

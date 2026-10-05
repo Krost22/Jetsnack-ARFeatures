@@ -26,6 +26,9 @@ class Filter(val name: String, enabled: Boolean = false, @DrawableRes val icon: 
     val enabled = mutableStateOf(enabled)
 }
 
+/** Feed filter that only keeps snacks you can view in 3D and AR. */
+val arFilter = Filter(name = "AR ready", icon = R.drawable.ic_view_in_ar)
+
 val filters = listOf(
     Filter(name = "Organic"),
     Filter(name = "Gluten-free"),

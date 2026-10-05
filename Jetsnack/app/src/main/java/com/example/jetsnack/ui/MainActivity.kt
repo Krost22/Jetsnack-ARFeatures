@@ -19,12 +19,14 @@ package com.example.jetsnack.ui
 import android.appwidget.AppWidgetManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.lifecycle.lifecycleScope
+import com.example.jetsnack.ui.ar.SnackSceneRuntime
 import com.example.jetsnack.widget.RecentOrdersWidgetReceiver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,6 +41,13 @@ class MainActivity : ComponentActivity() {
             }
         }
         setContent { JetsnackApp() }
+
+        // Create the shared 3D engine once the first frames are drawn, so opening the first 3D
+        // snack or the AR view does not pay for it.
+        Looper.myQueue().addIdleHandler {
+            SnackSceneRuntime.get(applicationContext)
+            false
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)

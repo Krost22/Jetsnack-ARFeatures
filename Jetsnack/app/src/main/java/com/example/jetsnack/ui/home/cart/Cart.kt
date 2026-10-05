@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -89,6 +90,7 @@ import kotlin.math.roundToInt
 fun Cart(
     onSnackClick: (Long, String) -> Unit,
     modifier: Modifier = Modifier,
+    onViewInAr: () -> Unit = {},
     viewModel: CartViewModel = viewModel(factory = CartViewModel.provideFactory()),
 ) {
     val orderLines by viewModel.orderLines.collectAsStateWithLifecycle()
@@ -101,6 +103,7 @@ fun Cart(
         inspiredByCart = inspiredByCart,
         onSnackClick = onSnackClick,
         modifier = modifier,
+        onViewInAr = onViewInAr,
     )
 }
 
@@ -113,6 +116,7 @@ fun Cart(
     inspiredByCart: SnackCollection,
     onSnackClick: (Long, String) -> Unit,
     modifier: Modifier = Modifier,
+    onViewInAr: () -> Unit = {},
 ) {
     JetsnackSurface(modifier = modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -126,7 +130,11 @@ fun Cart(
                 modifier = Modifier.align(Alignment.TopCenter),
             )
             DestinationBar(modifier = Modifier.align(Alignment.TopCenter))
-            CheckoutBar(modifier = Modifier.align(Alignment.BottomCenter))
+            CheckoutBar(
+                canViewInAr = orderLines.any { it.snack.arModel != null },
+                onViewInAr = onViewInAr,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
 }
@@ -437,7 +445,7 @@ fun SummaryItem(subtotal: Long, shippingCosts: Long, modifier: Modifier = Modifi
 }
 
 @Composable
-private fun CheckoutBar(modifier: Modifier = Modifier) {
+private fun CheckoutBar(canViewInAr: Boolean, onViewInAr: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier.background(
             JetsnackTheme.colors.uiBackground.copy(alpha = AlphaNearOpaque),
@@ -445,8 +453,33 @@ private fun CheckoutBar(modifier: Modifier = Modifier) {
     ) {
 
         JetsnackDivider()
-        Row {
-            Spacer(Modifier.weight(1f))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)) {
+                if (canViewInAr) {
+                    // Puts the whole order on the user's table, at real size.
+                    JetsnackButton(
+                        onClick = onViewInAr,
+                        shape = RectangleShape,
+                        backgroundGradient = JetsnackTheme.colors.interactiveSecondary,
+                        contentColor = JetsnackTheme.colors.brand,
+                        modifier = Modifier
+                            .padding(start = 12.dp, top = 8.dp, bottom = 8.dp)
+                            .fillMaxWidth(),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_view_in_ar),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(id = R.string.view_order_in_ar),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
             JetsnackButton(
                 onClick = { /* todo */ },
                 shape = RectangleShape,

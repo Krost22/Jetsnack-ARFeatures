@@ -15,7 +15,28 @@
     <string name="app_name">Jetsnack</string>
     <string name="label_back">Back</string>
     <string name="view_in_your_space">View in your space</string>
-    <string name="ar_unavailable">AR viewer is not available on this device</string>
+    <string name="label_ar_ready">Available in 3D and AR</string>
+    <string name="view_order_in_ar">See it on your table</string>
+    <string name="build_your_donut">Build your donut</string>
+    <string name="glaze_strawberry">Strawberry</string>
+    <string name="glaze_chocolate">Chocolate</string>
+    <string name="glaze_vanilla">Vanilla</string>
+    <string name="glaze_matcha">Matcha</string>
+    <string name="donut_sprinkles">Sprinkles</string>
+    <string name="donut_drizzle">Drizzle</string>
+    <string name="ar_cart_title">Your order on the table</string>
+    <string name="ar_hint_find_surface">Move your phone slowly to find a table</string>
+    <string name="ar_hint_tap_to_place">Tap the table to place your snacks</string>
+    <string name="ar_hint_move">Tap another spot on the table to move them</string>
+    <string name="ar_compare_with">Compare the size with</string>
+    <string name="ar_compare_none">Nothing</string>
+    <string name="ar_cart_total">Total %1$s</string>
+    <string name="ar_cart_no_models">Some snacks in your cart do not have a 3D model yet</string>
+    <string name="ar_cart_empty">Add a snack with a 3D model to your cart to see it here</string>
+    <string name="ar_share">Share a photo</string>
+    <string name="ar_share_chooser">Share your snacks</string>
+    <string name="ar_share_text">Look what I am about to order on Jetsnack!</string>
+    <string name="ar_share_failed">Could not take the photo</string>
 
     <!-- Home Tabs -->
     <string name="home_feed">Home</string>
@@ -42,6 +63,8 @@
     <string name="ingredients_list">Vanilla, Almond Flour, Eggs, Butter, Cream, Sugar</string>
     <string name="quantity">Qty</string>
     <string name="add_to_cart">ADD TO CART</string>
+    <string name="added_to_cart">ADDED TO CART ✓</string>
+    <string name="added_to_cart_message">Added to your cart</string>
 
     <!-- Cart -->
     <string name="cart_order_header">Order (%1s)</string>

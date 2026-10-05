@@ -46,6 +46,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.jetsnack.R
 import com.example.jetsnack.model.Snack
+import com.example.jetsnack.model.SnackRepo
+import com.example.jetsnack.model.SnackbarManager
 import com.example.jetsnack.model.snacks
 import com.example.jetsnack.ui.components.JetsnackButton
 import com.example.jetsnack.ui.components.JetsnackDivider
@@ -116,7 +118,10 @@ private fun SearchResult(snack: Snack, onSnackClick: (Long, String) -> Unit, sho
                 )
             }
             JetsnackButton(
-                onClick = { /* todo */ },
+                onClick = {
+                    SnackRepo.addToCart(snack)
+                    SnackbarManager.showMessage(R.string.added_to_cart_message)
+                },
                 shape = CircleShape,
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier.size(36.dp),

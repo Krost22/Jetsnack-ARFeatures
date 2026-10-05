@@ -17,6 +17,12 @@
     <!--Load images from Unsplash-->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- AR is optional: devices without ARCore still get the 3D viewer. The camera permission
+         and the ARCore "optional" meta-data come from the SceneView AR library. -->
+    <uses-feature
+        android:name="android.hardware.camera.ar"
+        android:required="false" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -36,6 +42,17 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/snack_order_widget_info" />
         </receiver>
+
+        <!-- Shares AR snapshots with other apps. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <profileable
             android:shell="true"

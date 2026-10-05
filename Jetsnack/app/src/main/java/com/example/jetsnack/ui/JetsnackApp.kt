@@ -43,6 +43,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.example.jetsnack.ui.ar.ArSubject
+import com.example.jetsnack.ui.ar.SnackArScreen
 import com.example.jetsnack.ui.components.JetsnackScaffold
 import com.example.jetsnack.ui.components.JetsnackSnackbar
 import com.example.jetsnack.ui.components.rememberJetsnackScaffoldState
@@ -75,6 +77,7 @@ fun JetsnackApp() {
                     ) { backStackEntry ->
                         MainContainer(
                             onSnackSelected = jetsnackNavController::navigateToSnackDetail,
+                            onViewCartInAr = jetsnackNavController::navigateToArCart,
                         )
                     }
 
@@ -96,6 +99,33 @@ fun JetsnackApp() {
                             snackId,
                             origin = origin ?: "",
                             upPress = jetsnackNavController::upPress,
+                            onSnackClick = { id, snackOrigin ->
+                                jetsnackNavController.navigateToSnackDetail(id, snackOrigin, backStackEntry)
+                            },
+                            onViewInAr = jetsnackNavController::navigateToArSnack,
+                        )
+                    }
+
+                    composableWithCompositionLocal(
+                        "${MainDestinations.AR_SNACK_ROUTE}/{${MainDestinations.SNACK_ID_KEY}}",
+                        arguments = listOf(
+                            navArgument(MainDestinations.SNACK_ID_KEY) {
+                                type = NavType.LongType
+                            },
+                        ),
+                    ) { backStackEntry ->
+                        val snackId = requireNotNull(backStackEntry.arguments)
+                            .getLong(MainDestinations.SNACK_ID_KEY)
+                        SnackArScreen(
+                            subject = ArSubject.SingleSnack(snackId),
+                            upPress = jetsnackNavController::upPress,
+                        )
+                    }
+
+                    composableWithCompositionLocal(MainDestinations.AR_CART_ROUTE) {
+                        SnackArScreen(
+                            subject = ArSubject.Cart,
+                            upPress = jetsnackNavController::upPress,
                         )
                     }
                 }
@@ -105,7 +135,11 @@ fun JetsnackApp() {
 }
 
 @Composable
-fun MainContainer(modifier: Modifier = Modifier, onSnackSelected: (Long, String, NavBackStackEntry) -> Unit) {
+fun MainContainer(
+    modifier: Modifier = Modifier,
+    onSnackSelected: (Long, String, NavBackStackEntry) -> Unit,
+    onViewCartInAr: () -> Unit = {},
+) {
     val jetsnackScaffoldState = rememberJetsnackScaffoldState()
     val nestedNavController = rememberJetsnackNavController()
     val navBackStackEntry by nestedNavController.navController.currentBackStackEntryAsState()
@@ -158,6 +192,7 @@ fun MainContainer(modifier: Modifier = Modifier, onSnackSelected: (Long, String,
         ) {
             addHomeGraph(
                 onSnackSelected = onSnackSelected,
+                onViewCartInAr = onViewCartInAr,
                 modifier = Modifier
                     .padding(padding)
                     .consumeWindowInsets(padding),

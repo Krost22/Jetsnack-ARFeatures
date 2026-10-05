@@ -125,7 +125,11 @@ fun NavGraphBuilder.composableWithCompositionLocal(
     }
 }
 
-fun NavGraphBuilder.addHomeGraph(onSnackSelected: (Long, String, NavBackStackEntry) -> Unit, modifier: Modifier = Modifier) {
+fun NavGraphBuilder.addHomeGraph(
+    onSnackSelected: (Long, String, NavBackStackEntry) -> Unit,
+    modifier: Modifier = Modifier,
+    onViewCartInAr: () -> Unit = {},
+) {
     composable(HomeSections.FEED.route) { from ->
         Feed(
             onSnackClick = { id, origin -> onSnackSelected(id, origin, from) },
@@ -147,6 +151,7 @@ fun NavGraphBuilder.addHomeGraph(onSnackSelected: (Long, String, NavBackStackEnt
         Cart(
             onSnackClick = { id, origin -> onSnackSelected(id, origin, from) },
             modifier,
+            onViewInAr = onViewCartInAr,
         )
     }
     composable(HomeSections.PROFILE.route) {

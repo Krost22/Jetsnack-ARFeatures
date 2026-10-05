@@ -30,17 +30,13 @@ data class Snack(
     val price: Long,
     val tagline: String = "",
     val tags: Set<String> = emptySet(),
-    /** HTTPS URL of a glTF/glb model shown in AR via Scene Viewer, or null if the snack has none. */
-    val arModelUrl: String? = null,
+    /** Real-scale 3D model shown in the 3D viewer and in AR, or null if the snack has none. */
+    val arModel: SnackArModel? = null,
 )
 
 /**
  * Static data
  */
-
-// Scene Viewer only loads models over HTTPS, so the glb is served from the repo on GitHub.
-private const val DONUT_AR_MODEL_URL =
-    "https://raw.githubusercontent.com/Krost22/Jetsnack-ARFeatures/main/Jetsnack/ar/models/donut.glb"
 
 val snacks = listOf(
     Snack(
@@ -49,6 +45,7 @@ val snacks = listOf(
         tagline = "A tag line",
         imageRes = R.drawable.cupcake,
         price = 299,
+        arModel = SnackArModels.Cupcake,
     ),
     Snack(
         id = Random.nextLong(),
@@ -56,7 +53,7 @@ val snacks = listOf(
         tagline = "A tag line",
         imageRes = R.drawable.donut,
         price = 299,
-        arModelUrl = DONUT_AR_MODEL_URL,
+        arModel = SnackArModels.Donut,
     ),
     Snack(
         id = Random.nextLong(),
@@ -64,6 +61,7 @@ val snacks = listOf(
         tagline = "A tag line",
         imageRes = R.drawable.eclair,
         price = 299,
+        arModel = SnackArModels.Eclair,
     ),
     Snack(
         id = Random.nextLong(),
@@ -78,6 +76,7 @@ val snacks = listOf(
         tagline = "A tag line",
         imageRes = R.drawable.gingerbread,
         price = 499,
+        arModel = SnackArModels.Gingerbread,
     ),
     Snack(
         id = Random.nextLong(),
@@ -92,6 +91,7 @@ val snacks = listOf(
         tagline = "A tag line",
         imageRes = R.drawable.ice_cream_sandwich,
         price = 1299,
+        arModel = SnackArModels.IceCreamSandwich,
     ),
     Snack(
         id = Random.nextLong(),
@@ -106,6 +106,7 @@ val snacks = listOf(
         tagline = "A tag line",
         imageRes = R.drawable.kitkat,
         price = 549,
+        arModel = SnackArModels.KitKat,
     ),
     Snack(
         id = Random.nextLong(),

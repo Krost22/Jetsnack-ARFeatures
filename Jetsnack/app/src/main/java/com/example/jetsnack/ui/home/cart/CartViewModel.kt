@@ -32,8 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
  */
 class CartViewModel(private val snackbarManager: SnackbarManager, snackRepository: SnackRepo) : ViewModel() {
 
-    private val _orderLines: MutableStateFlow<List<OrderLine>> =
-        MutableStateFlow(snackRepository.getCart())
+    private val _orderLines: MutableStateFlow<List<OrderLine>> = snackRepository.cartOrderLines
     val orderLines: StateFlow<List<OrderLine>> get() = _orderLines
 
     // Logic to show errors every few requests

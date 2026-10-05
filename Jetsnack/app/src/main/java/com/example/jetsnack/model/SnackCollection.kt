@@ -18,6 +18,8 @@ package com.example.jetsnack.model
 
 import androidx.compose.runtime.Immutable
 import kotlin.random.Random
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 
 @Immutable
 data class SnackCollection(val id: Long, val name: String, val snacks: List<Snack>, val type: CollectionType = CollectionType.Normal)
@@ -35,6 +37,25 @@ object SnackRepo {
     fun getFilters() = filters
     fun getPriceFilters() = priceFilters
     fun getCart() = cart
+
+    /** The live cart, shared by the cart screen and the "your order on the table" AR view. */
+    val cartOrderLines = MutableStateFlow(cart)
+
+    /** Adds [count] of [snack] to the cart, merging with an existing line for the same snack. */
+    fun addToCart(snack: Snack, count: Int = 1) {
+        if (count <= 0) return
+        cartOrderLines.update { lines ->
+            if (lines.any { it.snack.id == snack.id }) {
+                lines.map { if (it.snack.id == snack.id) it.copy(count = it.count + count) else it }
+            } else {
+                lines + OrderLine(snack, count)
+            }
+        }
+    }
+    fun getArFilter() = arFilter
+
+    /** Snacks that have a 3D model, offered for side-by-side size comparison in AR. */
+    fun getArSnacks() = snacks.filter { it.arModel != null }
     fun getSortFilters() = sortFilters
     fun getCategoryFilters() = categoryFilters
     fun getSortDefault() = sortDefault

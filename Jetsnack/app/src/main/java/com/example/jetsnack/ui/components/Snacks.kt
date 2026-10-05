@@ -28,6 +28,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -58,12 +59,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
@@ -211,24 +214,29 @@ fun SnackItem(snack: Snack, snackCollectionId: Long, onSnackClick: (Long, String
                     })
                     .padding(8.dp),
             ) {
-                SnackImage(
-                    imageRes = snack.imageRes,
-                    elevation = 1.dp,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(120.dp)
-                        .sharedBounds(
-                            rememberSharedContentState(
-                                key = SnackSharedElementKey(
-                                    snackId = snack.id,
-                                    origin = snackCollectionId.toString(),
-                                    type = SnackSharedElementType.Image,
+                Box {
+                    SnackImage(
+                        imageRes = snack.imageRes,
+                        elevation = 1.dp,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(120.dp)
+                            .sharedBounds(
+                                rememberSharedContentState(
+                                    key = SnackSharedElementKey(
+                                        snackId = snack.id,
+                                        origin = snackCollectionId.toString(),
+                                        type = SnackSharedElementType.Image,
+                                    ),
                                 ),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                boundsTransform = snackDetailBoundsTransform,
                             ),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            boundsTransform = snackDetailBoundsTransform,
-                        ),
-                )
+                    )
+                    if (snack.arModel != null) {
+                        ArBadge(Modifier.align(Alignment.TopEnd))
+                    }
+                }
                 Text(
                     text = snack.name,
                     style = MaterialTheme.typography.titleMedium,
@@ -362,26 +370,30 @@ private fun HighlightSnackItem(
                             ),
                     )
 
-                    SnackImage(
-                        imageRes = snack.imageRes,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .sharedBounds(
-                                rememberSharedContentState(
-                                    key = SnackSharedElementKey(
-                                        snackId = snack.id,
-                                        origin = snackCollectionId.toString(),
-                                        type = SnackSharedElementType.Image,
+                    Box(Modifier.align(Alignment.BottomCenter)) {
+                        SnackImage(
+                            imageRes = snack.imageRes,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .sharedBounds(
+                                    rememberSharedContentState(
+                                        key = SnackSharedElementKey(
+                                            snackId = snack.id,
+                                            origin = snackCollectionId.toString(),
+                                            type = SnackSharedElementType.Image,
+                                        ),
                                     ),
-                                ),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                                exit = fadeOut(nonSpatialExpressiveSpring()),
-                                enter = fadeIn(nonSpatialExpressiveSpring()),
-                                boundsTransform = snackDetailBoundsTransform,
-                            )
-                            .align(Alignment.BottomCenter)
-                            .size(120.dp),
-                    )
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    exit = fadeOut(nonSpatialExpressiveSpring()),
+                                    enter = fadeIn(nonSpatialExpressiveSpring()),
+                                    boundsTransform = snackDetailBoundsTransform,
+                                )
+                                .size(120.dp),
+                        )
+                        if (snack.arModel != null) {
+                            ArBadge(Modifier.align(Alignment.TopEnd))
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -443,6 +455,20 @@ fun debugPlaceholder(@DrawableRes debugPreview: Int) = if (LocalInspectionMode.c
     painterResource(id = debugPreview)
 } else {
     null
+}
+
+/** Marks snacks that can be viewed in 3D and placed on the table in AR. */
+@Composable
+fun ArBadge(modifier: Modifier = Modifier) {
+    Icon(
+        painter = painterResource(R.drawable.ic_view_in_ar),
+        contentDescription = stringResource(R.string.label_ar_ready),
+        tint = JetsnackTheme.colors.textInteractive,
+        modifier = modifier
+            .size(28.dp)
+            .background(Brush.linearGradient(JetsnackTheme.colors.interactivePrimary), CircleShape)
+            .padding(6.dp),
+    )
 }
 
 @Composable

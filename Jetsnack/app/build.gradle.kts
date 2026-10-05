@@ -132,6 +132,15 @@ dependencies {
 
     implementation(libs.coil.kt.compose)
 
+    // SceneView's HTTP client (Fuel) still depends on the legacy kotlin-android-extensions runtime,
+    // whose classes clash with kotlin-parcelize. Models are bundled as assets, so it is not needed.
+    implementation(libs.sceneview) {
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-android-extensions-runtime")
+    }
+    implementation(libs.sceneview.ar) {
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-android-extensions-runtime")
+    }
+
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)

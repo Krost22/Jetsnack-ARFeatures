@@ -34,6 +34,8 @@ object MainDestinations {
     const val SNACK_DETAIL_ROUTE = "snack"
     const val SNACK_ID_KEY = "snackId"
     const val ORIGIN = "origin"
+    const val AR_SNACK_ROUTE = "ar/snack"
+    const val AR_CART_ROUTE = "ar/cart"
 }
 
 /**
@@ -78,6 +80,14 @@ class JetsnackNavController(val navController: NavHostController) {
         if (from.lifecycleIsResumed()) {
             navController.navigate("${MainDestinations.SNACK_DETAIL_ROUTE}/$snackId?origin=$origin")
         }
+    }
+
+    fun navigateToArSnack(snackId: Long) {
+        navController.navigate("${MainDestinations.AR_SNACK_ROUTE}/$snackId") { launchSingleTop = true }
+    }
+
+    fun navigateToArCart() {
+        navController.navigate(MainDestinations.AR_CART_ROUTE) { launchSingleTop = true }
     }
 }
 

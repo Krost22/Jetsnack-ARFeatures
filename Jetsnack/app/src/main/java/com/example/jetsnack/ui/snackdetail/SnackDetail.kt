@@ -67,6 +67,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -83,7 +85,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -92,12 +94,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import com.example.jetsnack.R
+import com.example.jetsnack.model.DonutStyleRepo
 import com.example.jetsnack.model.Snack
 import com.example.jetsnack.model.SnackCollection
 import com.example.jetsnack.model.SnackRepo
@@ -105,7 +109,8 @@ import com.example.jetsnack.ui.LocalNavAnimatedVisibilityScope
 import com.example.jetsnack.ui.LocalSharedTransitionScope
 import com.example.jetsnack.ui.SnackSharedElementKey
 import com.example.jetsnack.ui.SnackSharedElementType
-import com.example.jetsnack.ui.ar.launchSceneViewer
+import com.example.jetsnack.ui.ar.DonutCustomizer
+import com.example.jetsnack.ui.ar.Snack3dViewer
 import com.example.jetsnack.ui.components.JetsnackButton
 import com.example.jetsnack.ui.components.JetsnackDivider
 import com.example.jetsnack.ui.components.JetsnackPreviewWrapper
@@ -118,6 +123,7 @@ import com.example.jetsnack.ui.theme.Neutral8
 import com.example.jetsnack.ui.utils.formatPrice
 import kotlin.math.max
 import kotlin.math.min
+import kotlinx.coroutines.delay
 
 private val BottomBarHeight = 56.dp
 private val TitleHeight = 128.dp
@@ -129,6 +135,7 @@ private val MaxTitleOffset = ImageOverlap + MinTitleOffset + GradientScroll
 private val ExpandedImageSize = 300.dp
 private val CollapsedImageSize = 150.dp
 private val HzPadding = Modifier.padding(horizontal = 24.dp)
+private const val AddedConfirmationMillis = 1_500L
 
 fun <T> spatialExpressiveSpring() = spring<T>(
     dampingRatio = 0.8f,
@@ -145,7 +152,13 @@ val snackDetailBoundsTransform = BoundsTransform { _, _ ->
 }
 
 @Composable
-fun SnackDetail(snackId: Long, origin: String, upPress: () -> Unit) {
+fun SnackDetail(
+    snackId: Long,
+    origin: String,
+    upPress: () -> Unit,
+    onSnackClick: (Long, String) -> Unit = { _, _ -> },
+    onViewInAr: (Long) -> Unit = {},
+) {
     val snack = remember(snackId) { SnackRepo.getSnack(snackId) }
     val related = remember(snackId) { SnackRepo.getRelated(snackId) }
     val sharedTransitionScope = LocalSharedTransitionScope.current
@@ -184,11 +197,11 @@ fun SnackDetail(snackId: Long, origin: String, upPress: () -> Unit) {
         ) {
             val scroll = rememberScrollState(0)
             Header(snack.id, origin = origin)
-            Body(related, scroll)
+            Body(snack, related, scroll, onSnackClick)
             Title(snack, origin) { scroll.value }
-            Image(snack, origin) { scroll.value }
+            Image(snack, origin, onViewInAr = { onViewInAr(snack.id) }) { scroll.value }
             Up(upPress)
-            CartBottomBar(modifier = Modifier.align(Alignment.BottomCenter))
+            CartBottomBar(snack, modifier = Modifier.align(Alignment.BottomCenter))
         }
     }
 }
@@ -282,7 +295,7 @@ private fun SharedTransitionScope.Up(upPress: () -> Unit) {
 }
 
 @Composable
-private fun Body(related: List<SnackCollection>, scroll: ScrollState) {
+private fun Body(snack: Snack, related: List<SnackCollection>, scroll: ScrollState, onSnackClick: (Long, String) -> Unit) {
     val sharedTransitionScope =
         LocalSharedTransitionScope.current ?: throw IllegalStateException("No scope found")
     with(sharedTransitionScope) {
@@ -346,6 +359,15 @@ private fun Body(related: List<SnackCollection>, scroll: ScrollState) {
                                 .skipToLookaheadSize(),
                         )
 
+                        if (snack.arModel?.customizable == true) {
+                            Spacer(Modifier.height(32.dp))
+                            DonutCustomizer(
+                                style = DonutStyleRepo.style,
+                                onStyleChange = { DonutStyleRepo.style = it },
+                                modifier = HzPadding,
+                            )
+                        }
+
                         Spacer(Modifier.height(40.dp))
                         Text(
                             text = stringResource(R.string.ingredients),
@@ -368,7 +390,7 @@ private fun Body(related: List<SnackCollection>, scroll: ScrollState) {
                             key(snackCollection.id) {
                                 SnackCollection(
                                     snackCollection = snackCollection,
-                                    onSnackClick = { _, _ -> },
+                                    onSnackClick = onSnackClick,
                                     highlight = false,
                                 )
                             }
@@ -471,11 +493,7 @@ private fun Title(snack: Snack, origin: String, scrollProvider: () -> Int) {
 }
 
 @Composable
-private fun Image(
-    snack: Snack,
-    origin: String,
-    scrollProvider: () -> Int,
-) {
+private fun Image(snack: Snack, origin: String, onViewInAr: () -> Unit, scrollProvider: () -> Int) {
     val collapseRange = with(LocalDensity.current) { (MaxTitleOffset - MinTitleOffset).toPx() }
     val collapseFractionProvider = {
         (scrollProvider() / collapseRange).coerceIn(0f, 1f)
@@ -489,6 +507,18 @@ private fun Image(
             ?: throw IllegalStateException("No sharedTransitionScope found")
         val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
             ?: throw IllegalStateException("No animatedVisibilityScope found")
+
+        // The photo drives the shared element transition; once it has settled it is swapped for
+        // the live 3D model, which fades back to the photo as the header collapses.
+        val transition = animatedVisibilityScope.transition
+        val transitionSettled = transition.currentState == EnterExitState.Visible &&
+            transition.targetState == EnterExitState.Visible
+        val arModel = snack.arModel
+        val show3d = arModel != null && transitionSettled
+        var modelLoaded by remember { mutableStateOf(false) }
+        val viewerAlphaProvider = {
+            if (show3d && modelLoaded) (1f - collapseFractionProvider() * 3f).coerceIn(0f, 1f) else 0f
+        }
 
         Box {
             with(sharedTransitionScope) {
@@ -509,14 +539,25 @@ private fun Image(
                             enter = fadeIn(),
                             boundsTransform = snackDetailBoundsTransform,
                         )
-                        .fillMaxSize(),
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = 1f - viewerAlphaProvider() },
 
                 )
             }
-            snack.arModelUrl?.let { modelUrl ->
+            if (show3d) {
+                // Only flips when the viewer fades fully in or out, not on every scrolled pixel.
+                val viewerHidden by remember { derivedStateOf { collapseFractionProvider() * 3f >= 1f } }
+                Snack3dViewer(
+                    model = arModel,
+                    donutStyle = DonutStyleRepo.style,
+                    paused = viewerHidden,
+                    onModelLoaded = { modelLoaded = true },
+                    modifier = Modifier.renderAtSizeAndScale(ExpandedImageSize, viewerAlphaProvider),
+                )
+            }
+            if (arModel != null) {
                 ViewInArButton(
-                    snackName = snack.name,
-                    modelUrl = modelUrl,
+                    onClick = onViewInAr,
                     collapseFractionProvider = collapseFractionProvider,
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
@@ -525,14 +566,27 @@ private fun Image(
     }
 }
 
+/**
+ * Lays the content out at a fixed [size] and scales it down to the incoming constraints, so the
+ * 3D surface is not reallocated on every frame while the header collapses.
+ */
+private fun Modifier.renderAtSizeAndScale(size: Dp, alphaProvider: () -> Float) = layout { measurable, constraints ->
+    val fullSize = size.roundToPx()
+    val placeable = measurable.measure(Constraints.fixed(fullSize, fullSize))
+    val width = constraints.maxWidth
+    val height = constraints.maxHeight
+    layout(width, height) {
+        placeable.placeWithLayer((width - fullSize) / 2, (height - fullSize) / 2) {
+            val scale = width / fullSize.toFloat()
+            scaleX = scale
+            scaleY = scale
+            alpha = alphaProvider()
+        }
+    }
+}
+
 @Composable
-private fun ViewInArButton(
-    snackName: String,
-    modelUrl: String,
-    collapseFractionProvider: () -> Float,
-    modifier: Modifier = Modifier,
-) {
-    val context = LocalContext.current
+private fun ViewInArButton(onClick: () -> Unit, collapseFractionProvider: () -> Float, modifier: Modifier = Modifier) {
     val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
         ?: throw IllegalStateException("No animatedVisibilityScope found")
     // Fade out quickly as the image starts collapsing so it never sits on the small thumbnail.
@@ -540,7 +594,7 @@ private fun ViewInArButton(
     with(animatedVisibilityScope) {
         JetsnackButton(
             onClick = {
-                if (visibleFractionProvider() > 0f) launchSceneViewer(context, modelUrl, snackName)
+                if (visibleFractionProvider() > 0f) onClick()
             },
             shape = CircleShape,
             contentPadding = PaddingValues(start = 12.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
@@ -597,8 +651,16 @@ private fun CollapsingImageLayout(collapseFractionProvider: () -> Float, modifie
 }
 
 @Composable
-private fun CartBottomBar(modifier: Modifier = Modifier) {
+private fun CartBottomBar(snack: Snack, modifier: Modifier = Modifier) {
     val (count, updateCount) = remember { mutableIntStateOf(1) }
+    // Briefly confirms the add on the button itself, then resets the quantity.
+    var justAdded by remember { mutableStateOf(false) }
+    LaunchedEffect(justAdded) {
+        if (justAdded) {
+            delay(AddedConfirmationMillis)
+            justAdded = false
+        }
+    }
     val sharedTransitionScope =
         LocalSharedTransitionScope.current ?: throw IllegalStateException("No Shared scope")
     val animatedVisibilityScope =
@@ -635,11 +697,16 @@ private fun CartBottomBar(modifier: Modifier = Modifier) {
                         )
                         Spacer(Modifier.width(16.dp))
                         JetsnackButton(
-                            onClick = { /* todo */ },
+                            onClick = {
+                                SnackRepo.addToCart(snack, count)
+                                updateCount(1)
+                                justAdded = true
+                            },
+                            enabled = count > 0,
                             modifier = Modifier.weight(1f),
                         ) {
                             Text(
-                                text = stringResource(R.string.add_to_cart),
+                                text = stringResource(if (justAdded) R.string.added_to_cart else R.string.add_to_cart),
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = TextAlign.Center,
                                 maxLines = 1,
